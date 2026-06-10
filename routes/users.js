@@ -5,8 +5,10 @@ const verifyFirebaseToken = require('../middleware/auth');
 
 // GET /api/users/search?q=
 router.get('/search', verifyFirebaseToken, async (req, res) => {
+  console.log('🔍 [Backend] GET /api/users/search called');
   const q = req.query.q?.trim() || '';
   const currentUserId = req.user._id;
+  console.log('🔍 [Backend] Query:', q, 'CurrentUserId:', currentUserId);
   const filter = { _id: { $ne: currentUserId } };
   if (q) {
     filter.$or = [
@@ -16,8 +18,10 @@ router.get('/search', verifyFirebaseToken, async (req, res) => {
   }
   try {
     const users = await User.find(filter).limit(50).sort({ name: 1 });
-    res.json(users.map(u => u.toClientJSON()));
+    console.log('🔍 [Backend] Found', users.length, 'users');
+    res.json(users.map(u => u.toClientJSON() || {}));
   } catch (err) {
+    console.error('❌ [Backend] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

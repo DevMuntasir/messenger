@@ -22,8 +22,30 @@ function setupSocketHandlers(io) {
     if (!token) return next(new Error('Authentication required'));
     try {
       const decoded = await admin.auth().verifyIdToken(token);
-      const user = await User.findOne({ firebaseUid: decoded.uid });
-      if (!user) return next(new Error('User not registered'));
+      let user = await User.findOne({ firebaseUid: decoded.uid });
+
+      // Auto-create user if doesn't exist
+      if (!user) {
+        try {
+          const firebaseUser = await admin.auth().getUser(decoded.uid);
+          user = await User.create({
+            firebaseUid: decoded.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || 'User',
+            handle: firebaseUser.email.split('@')[0].toLowerCase() + Math.random().toString(36).slice(2, 5),
+            initials: (firebaseUser.displayName || 'U')
+              .split(' ')
+              .map(w => w[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 3),
+            photoURL: firebaseUser.photoURL,
+          });
+        } catch (err) {
+          return next(new Error('Failed to create user: ' + err.message));
+        }
+      }
+
       socket.user = user;
       next();
     } catch {
