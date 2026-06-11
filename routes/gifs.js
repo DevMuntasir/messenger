@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const verifyFirebaseToken = require('../middleware/auth');
 
-// Proxy for the Tenor API.
-const API = 'https://api.tenor.com/v2';
-const API_KEY = 'AIzaSyDyWJsO-awYAL1JNnNEUXMq9ykJqXfMWGQ'; // Tenor API key
+// Proxy for the Tenor API (v1).
+const API = 'https://g.tenor.com/v1';
+const API_KEY = 'LIVDSRZULELA';
 
-async function tenorGet(path, params = {}) {
+async function tenorGet(endpoint, params = {}) {
   const searchParams = new URLSearchParams({ key: API_KEY, ...params });
-  const url = `${API}${path}?${searchParams}`;
+  const url = `${API}${endpoint}?${searchParams}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Tenor request failed: ${res.status}`);
   return res.json();
