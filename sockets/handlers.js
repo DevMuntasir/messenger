@@ -42,26 +42,38 @@ function setupSocketHandlers(io) {
             photoURL: firebaseUser.photoURL,
           });
         } catch (err) {
+          console.error('Failed to create user:', err);
           return next(new Error('Failed to create user: ' + err.message));
         }
       }
 
       socket.user = user;
       next();
-    } catch {
-      next(new Error('Invalid token'));
+    } catch (err) {
+      console.error('Token verification failed:', err);
+      next(new Error('Invalid token: ' + err.message));
     }
   });
 
   io.on('connection', async (socket) => {
     const user = socket.user;
+    console.log(`User ${user._id} connected via socket ${socket.id}`);
 
     // Mark user online
-    await User.findByIdAndUpdate(user._id, { online: true });
-    socket.broadcast.emit('presence_update', {
-      userId: user._id.toString(),
-      online: true,
-      lastSeen: new Date().toISOString(),
+    try {
+      await User.findByIdAndUpdate(user._id, { online: true });
+      socket.broadcast.emit('presence_update', {
+        userId: user._id.toString(),
+        online: true,
+        lastSeen: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Error marking user online:', err);
+    }
+
+    // Global error handler
+    socket.on('error', (err) => {
+      console.error('Socket error:', err);
     });
 
     // Join rooms for all conversations
@@ -81,7 +93,13 @@ function setupSocketHandlers(io) {
     socket.on('send_message', async ({ conversationId, kind, text, imageUrl, voiceUrl, voiceDuration }) => {
       try {
         const conv = await Conversation.findOne({ _id: conversationId, participants: user._id });
-        if (!conv) return;
+        if (!conv) {
+          return socket.emit('error', {
+            event: 'send_message',
+            message: 'Conversation not found or access denied',
+            code: 'CONV_NOT_FOUND'
+          });
+        }
 
         const msg = await Message.create({
           conversationId,
@@ -124,7 +142,12 @@ function setupSocketHandlers(io) {
           },
         });
       } catch (err) {
-        socket.emit('error', { message: err.message });
+        console.error('Send message error:', err);
+        socket.emit('error', {
+          event: 'send_message',
+          message: err.message,
+          code: 'SEND_MESSAGE_FAILED'
+        });
       }
     });
 
@@ -164,7 +187,12 @@ function setupSocketHandlers(io) {
           messageIds,
         });
       } catch (err) {
-        socket.emit('error', { message: err.message });
+        console.error('Mark seen error:', err);
+        socket.emit('error', {
+          event: 'mark_seen',
+          message: err.message,
+          code: 'MARK_SEEN_FAILED'
+        });
       }
     });
 

@@ -14,8 +14,9 @@ router.post('/register', async (req, res) => {
   let decoded;
   try {
     decoded = await admin.auth().verifyIdToken(token);
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+  } catch (err) {
+    console.error('Token verification failed in /register:', err.message);
+    return res.status(401).json({ error: 'Invalid token: ' + err.message });
   }
 
   const { name, handle, g } = req.body;
@@ -49,10 +50,11 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ user: user.toClientJSON() });
   } catch (err) {
+    console.error('Error in /register:', err);
     if (err.code === 11000) {
       return res.status(409).json({ error: 'Handle already taken' });
     }
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Registration failed: ' + err.message });
   }
 });
 
@@ -80,8 +82,9 @@ router.patch('/me', verifyFirebaseToken, async (req, res) => {
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });
     res.json({ user: user.toClientJSON() });
   } catch (err) {
+    console.error('Error in PATCH /me:', err);
     if (err.code === 11000) return res.status(409).json({ error: 'Handle already taken' });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Update failed: ' + err.message });
   }
 });
 

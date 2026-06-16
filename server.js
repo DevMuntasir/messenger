@@ -41,27 +41,33 @@ const verifyAndCreateUser = async (req, res, next) => {
 
     // Auto-create user if doesn't exist
     if (!user) {
-      const firebaseUser = await admin.auth().getUser(decoded.uid);
-      user = await User.create({
-        firebaseUid: decoded.uid,
-        email: firebaseUser.email,
-        name: firebaseUser.displayName || 'User',
-        handle: firebaseUser.email.split('@')[0].toLowerCase() + Math.random().toString(36).slice(2, 5),
-        initials: (firebaseUser.displayName || 'U')
-          .split(' ')
-          .map(w => w[0])
-          .join('')
-          .toUpperCase()
-          .slice(0, 3),
-        photoURL: firebaseUser.photoURL,
-      });
+      try {
+        const firebaseUser = await admin.auth().getUser(decoded.uid);
+        user = await User.create({
+          firebaseUid: decoded.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || 'User',
+          handle: firebaseUser.email.split('@')[0].toLowerCase() + Math.random().toString(36).slice(2, 5),
+          initials: (firebaseUser.displayName || 'U')
+            .split(' ')
+            .map(w => w[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 3),
+          photoURL: firebaseUser.photoURL,
+        });
+      } catch (createErr) {
+        console.error('Error creating user in auth middleware:', createErr);
+        return res.status(500).json({ error: 'Failed to create user: ' + createErr.message });
+      }
     }
 
     req.firebaseUid = decoded.uid;
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    console.error('Token verification error in auth middleware:', err);
+    return res.status(401).json({ error: 'Invalid token: ' + err.message });
   }
 };
 
