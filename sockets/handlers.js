@@ -2,6 +2,7 @@ const admin = require('../config/firebase');
 const User = require('../models/User');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
+const { sendMessagePush } = require('../utils/push');
 
 function formatTime(date) {
   if (!date) return '';
@@ -141,6 +142,18 @@ function setupSocketHandlers(io) {
             unreadCounts: updatedConv.unreadCounts,
           },
         });
+
+        // Fire-and-forget FCM push to the other participants. Socket delivery
+        // only reaches foregrounded apps; backgrounded/killed apps rely on this
+        // to show the notification + chat head. Foregrounded apps ignore the
+        // data-only message, so sending to everyone causes no duplicates.
+        sendMessagePush({
+          recipientIds: conv.participants.filter(p => p.toString() !== user._id.toString()),
+          sender: user,
+          conversationId,
+          previewText,
+          unreadCounts: updatedConv.unreadCounts,
+        }).catch(err => console.error('Push error:', err));
       } catch (err) {
         console.error('Send message error:', err);
         socket.emit('error', {
