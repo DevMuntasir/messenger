@@ -11,6 +11,7 @@ const { router: convRoutes } = require('./routes/conversations');
 const messageRoutes = require('./routes/messages');
 const uploadRoutes = require('./routes/upload');
 const gifRoutes = require('./routes/gifs');
+const lockerRoutes = require('./routes/locker');
 const setupSocketHandlers = require('./sockets/handlers');
 const admin = require('./config/firebase');
 const User = require('./models/User');
@@ -104,6 +105,7 @@ app.use('/api/conversations', convRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/gifs', gifRoutes);
+app.use('/api/locker', lockerRoutes);
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 

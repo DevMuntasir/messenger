@@ -10,6 +10,7 @@ const messageSchema = new mongoose.Schema({
   voiceUrl: { type: String, default: null },
   voiceDuration: { type: String, default: null },
   reaction: { type: String, default: null },
+  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
   seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   deleted: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
@@ -28,6 +29,14 @@ messageSchema.methods.toClientJSON = function (currentUserId) {
     uri: this.imageUrl,
     dur: this.voiceDuration,
     react: this.reaction,
+    replyTo: this.replyTo ? (this.replyTo._id || this.replyTo).toString() : null,
+    // Snapshot of the quoted message (present when replyTo is populated) so the
+    // client can render the quote even if the original isn't in its loaded window.
+    replyPreview: this.replyTo && this.replyTo.kind !== undefined ? {
+      kind: this.replyTo.kind,
+      text: this.replyTo.text,
+      senderId: (this.replyTo.senderId?._id || this.replyTo.senderId)?.toString() || null,
+    } : null,
     time: formatTime(this.createdAt),
     createdAt: this.createdAt,
     seenBy: this.seenBy.map(id => id.toString()),

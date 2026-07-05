@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const admin = require('../config/firebase');
 const User = require('../models/User');
 const Conversation = require('../models/Conversation');
@@ -91,7 +92,7 @@ function setupSocketHandlers(io) {
     });
 
     // Send message
-    socket.on('send_message', async ({ conversationId, kind, text, imageUrl, voiceUrl, voiceDuration }) => {
+    socket.on('send_message', async ({ conversationId, kind, text, imageUrl, voiceUrl, voiceDuration, replyTo }) => {
       try {
         const conv = await Conversation.findOne({ _id: conversationId, participants: user._id });
         if (!conv) {
@@ -102,6 +103,13 @@ function setupSocketHandlers(io) {
           });
         }
 
+        // Only accept replyTo if it points at a real message in this conversation
+        let replyToId = null;
+        if (replyTo && mongoose.isValidObjectId(replyTo)) {
+          const ref = await Message.findOne({ _id: replyTo, conversationId }).select('_id');
+          if (ref) replyToId = ref._id;
+        }
+
         const msg = await Message.create({
           conversationId,
           senderId: user._id,
@@ -110,6 +118,7 @@ function setupSocketHandlers(io) {
           imageUrl: imageUrl || null,
           voiceUrl: voiceUrl || null,
           voiceDuration: voiceDuration || null,
+          replyTo: replyToId,
           seenBy: [user._id],
         });
 
@@ -128,7 +137,10 @@ function setupSocketHandlers(io) {
         if (bulkOps.length) await Conversation.bulkWrite(bulkOps);
         await Conversation.findByIdAndUpdate(conversationId, updates);
 
-        await msg.populate('senderId', 'name handle initials g avatarUrl online');
+        await msg.populate([
+          { path: 'senderId', select: 'name handle initials g avatarUrl online' },
+          { path: 'replyTo', select: 'kind text senderId' },
+        ]);
         const msgData = msg.toClientJSON(user._id);
 
         // Fetch updated conversation for unread counts

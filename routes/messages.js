@@ -25,6 +25,7 @@ router.get('/:conversationId', verifyFirebaseToken, async (req, res) => {
 
     const msgs = await Message.find(filter)
       .populate('senderId', 'name handle initials g avatarUrl online')
+      .populate('replyTo', 'kind text senderId')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit));
 
@@ -36,7 +37,7 @@ router.get('/:conversationId', verifyFirebaseToken, async (req, res) => {
 
 // POST /api/messages/:conversationId — REST fallback (normally via socket)
 router.post('/:conversationId', verifyFirebaseToken, async (req, res) => {
-  const { kind, text, imageUrl, voiceUrl, voiceDuration } = req.body;
+  const { kind, text, imageUrl, voiceUrl, voiceDuration, replyTo } = req.body;
   if (!kind) return res.status(400).json({ error: 'kind required' });
   try {
     const conv = await Conversation.findOne({
@@ -53,6 +54,7 @@ router.post('/:conversationId', verifyFirebaseToken, async (req, res) => {
       imageUrl: imageUrl || null,
       voiceUrl: voiceUrl || null,
       voiceDuration: voiceDuration || null,
+      replyTo: replyTo || null,
       seenBy: [req.user._id],
     });
 
