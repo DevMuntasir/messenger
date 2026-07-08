@@ -55,8 +55,17 @@ router.post('/users', async (req, res) => {
       return res.json([]);
     }
 
+    const mongoose = require('mongoose');
+    const objectIds = userIds.map(id => {
+      try {
+        return new mongoose.Types.ObjectId(id);
+      } catch {
+        return id; // Return as-is if not valid ObjectId
+      }
+    });
+
     const stories = await Story.find({
-      userId: { $in: userIds },
+      userId: { $in: objectIds },
       expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
 
