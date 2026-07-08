@@ -11,11 +11,18 @@ router.post('/', async (req, res) => {
     const { imageUrl, caption } = req.body;
     const userId = req.user._id;
 
+    console.log('=== CREATE STORY ===');
+    console.log('User ID:', userId);
+    console.log('Image URL:', imageUrl);
+    console.log('Caption:', caption);
+
     if (!imageUrl) {
+      console.log('No image URL provided');
       return res.status(400).json({ error: 'Image URL is required' });
     }
 
     const expiresAt = new Date(Date.now() + STORY_EXPIRY_HOURS * 60 * 60 * 1000);
+    console.log('Expires at:', expiresAt);
 
     const story = await Story.create({
       userId,
@@ -24,6 +31,7 @@ router.post('/', async (req, res) => {
       expiresAt,
     });
 
+    console.log('Story created successfully:', story._id);
     res.status(201).json(story.toJSON());
   } catch (err) {
     console.error('Error creating story:', err);
