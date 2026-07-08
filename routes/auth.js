@@ -65,7 +65,7 @@ router.get('/me', verifyFirebaseToken, (req, res) => {
 
 // PATCH /api/auth/me
 router.patch('/me', verifyFirebaseToken, async (req, res) => {
-  const allowed = ['name', 'handle', 'g', 'activeStatus', 'readReceipts', 'pushToken'];
+  const allowed = ['name', 'handle', 'g', 'activeStatus', 'readReceipts', 'pushToken', 'avatarUrl'];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
