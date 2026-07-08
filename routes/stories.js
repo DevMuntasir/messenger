@@ -34,8 +34,18 @@ router.post('/', async (req, res) => {
 // Get user's stories
 router.get('/user/:userId', async (req, res) => {
   try {
+    const mongoose = require('mongoose');
+    let userId;
+
+    try {
+      userId = new mongoose.Types.ObjectId(req.params.userId);
+    } catch (e) {
+      console.log('Invalid userId format:', req.params.userId);
+      return res.json([]);
+    }
+
     const stories = await Story.find({
-      userId: req.params.userId,
+      userId,
       expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
 
@@ -51,24 +61,34 @@ router.post('/users', async (req, res) => {
   try {
     const { userIds } = req.body;
 
+    console.log('=== GET STORIES FROM USERS ===');
+    console.log('Received userIds:', userIds);
+
     if (!Array.isArray(userIds) || userIds.length === 0) {
+      console.log('No userIds provided');
       return res.json([]);
     }
 
     const mongoose = require('mongoose');
     const objectIds = userIds.map(id => {
       try {
-        return new mongoose.Types.ObjectId(id);
-      } catch {
-        return id; // Return as-is if not valid ObjectId
+        const objectId = new mongoose.Types.ObjectId(id);
+        console.log('Converted', id, 'to ObjectId:', objectId);
+        return objectId;
+      } catch (e) {
+        console.log('Failed to convert', id, 'error:', e.message);
+        return id;
       }
     });
+
+    console.log('ObjectIds to query:', objectIds);
 
     const stories = await Story.find({
       userId: { $in: objectIds },
       expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
 
+    console.log('Stories found:', stories.length);
     res.json(stories.map(s => s.toJSON()));
   } catch (err) {
     console.error('Error fetching stories from users:', err);
