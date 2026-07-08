@@ -8,7 +8,7 @@ const conversationSchema = new mongoose.Schema({
   groupGradient: { type: String, default: 'A' },
   lastMessage: {
     text: { type: String, default: '' },
-    kind: { type: String, enum: ['text', 'image', 'voice'], default: 'text' },
+    kind: { type: String, enum: ['text', 'image', 'video', 'voice'], default: 'text' },
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     sentAt: { type: Date, default: null },
   },

@@ -122,7 +122,7 @@ function setupSocketHandlers(io) {
           seenBy: [user._id],
         });
 
-        const previewText = kind === 'image' ? '📷 Photo' : kind === 'voice' ? '🎤 Voice message' : text;
+        const previewText = kind === 'image' ? '📷 Photo' : kind === 'video' ? '🎥 Video' : kind === 'voice' ? '🎤 Voice message' : text;
 
         // Increment unread for other participants, update lastMessage
         const updates = { updatedAt: msg.createdAt, 'lastMessage.text': previewText, 'lastMessage.kind': kind, 'lastMessage.senderId': user._id, 'lastMessage.sentAt': msg.createdAt };

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true, index: true },
   senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  kind: { type: String, enum: ['text', 'image', 'voice'], required: true },
+  kind: { type: String, enum: ['text', 'image', 'video', 'voice'], required: true },
   text: { type: String, default: null },
   imageUrl: { type: String, default: null },
   imagePublicId: { type: String, default: null },

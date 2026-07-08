@@ -5,15 +5,16 @@ const cloudinary = require('../config/cloudinary');
 const verifyFirebaseToken = require('../middleware/auth');
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
 
-// POST /api/upload/image — multipart
+// POST /api/upload/image — multipart image or video
 router.post('/image', verifyFirebaseToken, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
+  const isVideo = (req.file.mimetype || '').startsWith('video/');
   try {
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'halo-messenger', resource_type: 'image' },
+        { folder: 'halo-messenger', resource_type: isVideo ? 'video' : 'image' },
         (err, result) => (err ? reject(err) : resolve(result))
       );
       stream.end(req.file.buffer);
